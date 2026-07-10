@@ -16,7 +16,17 @@ If some other process still holds an open `HANDLE` to that process (for example 
 4. If that PID isn't in the baseline, it's a zombie. Multiple processes can independently hold handles to the same zombie, so each `(zombie, maker)` pair is tracked separately, along with how many handles that maker holds.
 5. Names are resolved via `NtQuerySystemInformation(SystemProcessIdInformation)` for zombies (a PID-based lookup that still works even though the zombie's Section object is already gone) and via `QueryFullProcessImageName` for makers, which are still-alive processes, so the normal handle-based path works fine there.
 
-The `Process` object type index used to filter the handle dump isn't hardcoded. It's resolved empirically once at startup by matching a known-good handle against the dump, since the index can vary across Windows builds.
+## Resolving the Process object type index
+
+Filtering the handle dump down to `Process` handles requires knowing the numeric `ObjectTypeIndex` the kernel assigns to that type, but this index isn't a fixed constant. It's assigned at boot time based on the order object types get registered, so it can differ across Windows builds.
+
+The naive fix would be parsing `NtQueryObject(NULL, ObjectTypesInformation, ...)`, which returns every registered type's name alongside its index. This was tried and dropped: the struct layout after each type's name (padding, reserved fields) isn't consistent across Windows versions, which makes computing the stride between entries in that array fragile and error-prone.
+
+Instead, the index is found empirically:
+
+1. Open a handle to the tool's own process (`OpenProcess` on `GetCurrentProcessId()`). This handle's type is known to be `Process` with certainty.
+2. Take the system-wide handle dump.
+3. Search the dump for the entry whose `UniqueProcessId` and `HandleValue` match that self-handle. Its `ObjectTypeIndex` field is, by construction, the real index for `Process` on this specific build.
 
 ## Build
 
