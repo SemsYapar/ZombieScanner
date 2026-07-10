@@ -271,10 +271,20 @@ static ZOMBIE_HANDLE_RECORD* ScanForZombies(int procTypeIdx, DWORD* outRecCount)
         char ownerName[MAX_PATH];
         GetProcessNameFromHandle(hOwner, ownerName, sizeof(ownerName));
 
+        // Request PROCESS_QUERY_LIMITED_INFORMATION explicitly instead
+        // of DUPLICATE_SAME_ACCESS. Source handles can carry a very
+        // narrow grant (confirmed via Process Explorer: some handles
+        // here carry only PROCESS_DUP_HANDLE, 0x40, nothing else).
+        // SAME_ACCESS would carry that same narrow grant over, and
+        // GetProcessId() below (which needs QUERY_LIMITED_INFORMATION)
+        // would silently fail, making the zombie invisible. With
+        // SeDebugPrivilege enabled, this request is checked against
+        // the object directly rather than limited by the source
+        // handle's grant.
         HANDLE dup = NULL;
         BOOL okDup = DuplicateHandle(hOwner, (HANDLE)e->HandleValue,
             GetCurrentProcess(), &dup,
-            0, FALSE, DUPLICATE_SAME_ACCESS);
+            PROCESS_QUERY_LIMITED_INFORMATION, FALSE, 0);
         CloseHandle(hOwner);
         if (!okDup || !dup) continue;
 
