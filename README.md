@@ -23,7 +23,7 @@ The `Process` object type index used to filter the handle dump isn't hardcoded. 
 Requires the MSVC toolchain (x64 Native Tools Command Prompt):
 
 ```
-cl /W4 /EHsc zombiescan.c /link ntdll.lib
+cl zombiescan.c /link ntdll.lib
 ```
 
 ## Run
