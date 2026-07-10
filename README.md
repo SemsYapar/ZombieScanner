@@ -11,6 +11,9 @@ If some other process still holds an open `HANDLE` to that process (for example 
 5. Names are resolved via `NtQuerySystemInformation(SystemProcessIdInformation)` for zombies (a PID-based lookup that still works even though the zombie's Section object is already gone) and via `QueryFullProcessImageName` for makers, which are still-alive processes, so the normal handle-based path works fine there.
 ## Resolving the Process object type index
 Filtering the handle dump down to `Process` handles requires knowing the numeric `ObjectTypeIndex` the kernel assigns to that type, but this index isn't a fixed constant. It's assigned at boot time based on the order object types get registered, so it can differ across Windows builds.
+
+In practice, testing this across multiple boots on the same machine kept producing the same index for `Process` every time. Whether it genuinely varies (across different Windows versions, different driver load orders, etc.) or is effectively constant in practice isn't fully confirmed here, so `ResolveProcessTypeIndexOnce()` is kept as a safety measure rather than a confirmed requirement.
+
 The naive fix would be parsing `NtQueryObject(NULL, ObjectTypesInformation, ...)`, which returns every registered type's name alongside its index. This was tried and dropped: the struct layout after each type's name (padding, reserved fields) isn't consistent across Windows versions, which makes computing the stride between entries in that array fragile and error-prone.
 Instead, the index is found empirically:
 1. Open a handle to the tool's own process (`OpenProcess` on `GetCurrentProcessId()`). This handle's type is known to be `Process` with certainty.
