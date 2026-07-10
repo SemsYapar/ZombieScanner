@@ -32,6 +32,9 @@ Run as Administrator. `SeDebugPrivilege` is required to duplicate handles owned 
 ## Disclaimer
 This is a diagnostic tool built for exploring Windows process internals, not a general-purpose leak detector. Interpreting a zombie as a bug in the maker process requires judgment. Sometimes it's intentional design, for example a supervisor process deliberately keeping a handle to check exit codes later.
 
+## Run Result Example
+<img width="1098" height="470" alt="image" src="https://github.com/user-attachments/assets/492fe5d2-a2d1-48fa-bd7e-72b5298af60b" />
+
 ## Update
 Cross-checking results against Pavel Yosifovich's ObjExp turned up a zombie ZombieScanner was missing. The cause was `DuplicateHandle` being called with `DUPLICATE_SAME_ACCESS`: some source handles carry a very narrow access grant (confirmed via Process Explorer as `0x40`, `PROCESS_DUP_HANDLE` only), and `SAME_ACCESS` carried that same narrow grant over to the duplicate. `GetProcessId()` needs `PROCESS_QUERY_LIMITED_INFORMATION`, which wasn't in that grant, so it failed silently and the zombie was dropped without any error being visible. The fix was requesting `PROCESS_QUERY_LIMITED_INFORMATION` explicitly instead of `DUPLICATE_SAME_ACCESS`. Since `SeDebugPrivilege` is enabled, this request is checked against the process object directly rather than being limited by whatever access the original handle happened to have.
 
