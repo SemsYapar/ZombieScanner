@@ -2,7 +2,7 @@
 A Windows zombie process detector and live monitor. It finds EPROCESS objects kept alive by dangling handles after a process has exited, using system-wide handle enumeration. No kernel driver required.
 ## What's a zombie process?
 When a Windows process exits, the kernel tears down its address space, closes its own handle table, and unlinks it from `PsActiveProcessHead`, the list that standard enumeration APIs (Task Manager, `CreateToolhelp32Snapshot`, `NtQuerySystemInformation(SystemProcessInformation)`) walk. But the EPROCESS object itself isn't freed until the object manager's reference count on it reaches zero.
-If some other process still holds an open `HANDLE` to that process (for example it called `CreateProcess`/`OpenProcess` and never closed the resulting handle), the EPROCESS object lingers in memory as a zombie. It has a PID, but no threads, no address space, and no handle table of its own, and it no longer shows up in any normal process listing.
+If some other process still holds an open `HANDLE` to that process (for example it called `CreateProcess`/`OpenProcess` and never closed the resulting handle), the EPROCESS object lingers in memory as a zombie. It has a PID, but no active threads, no address space, and no handle table of its own, and it no longer shows up in any normal process listing.
 ## How it works
 1. Baseline: snapshot the set of currently active PIDs via `CreateToolhelp32Snapshot`.
 2. Dump every handle on the system via `NtQuerySystemInformation(SystemExtendedHandleInformation)`.
