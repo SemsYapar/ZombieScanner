@@ -32,5 +32,5 @@ Run as Administrator. `SeDebugPrivilege` is required to duplicate handles owned 
 ## Disclaimer
 This is a diagnostic tool built for exploring Windows process internals, not a general-purpose leak detector. Interpreting a zombie as a bug in the maker process requires judgment. Sometimes it's intentional design, for example a supervisor process deliberately keeping a handle to check exit codes later.
 
-#Extra
+## Extra
 [My article](https://semsyapar.github.io/2026/07/10/zombie-processes.html) about this topic, is turkish, sory
