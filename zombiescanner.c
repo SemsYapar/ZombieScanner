@@ -1,11 +1,8 @@
 // zombiescan.c - Windows zombie process live monitor.
 //
 // A zombie process: exited, but still referenced by an open HANDLE
-// somewhere, so its EPROCESS object (and PID) survives with no
-// threads/address space/handle table of its own.
-//
-// Build: cl /W4 /EHsc zombiescan.c /link ntdll.lib
-// Run as Administrator. Stop with Ctrl+C.
+// somewhere, so its EPROCESS object survives with no
+// address space/handle table of its own.
 
 #include <windows.h>
 #include <winternl.h>
@@ -284,8 +281,6 @@ static ZOMBIE_HANDLE_RECORD* ScanForZombies(int procTypeIdx, DWORD* outRecCount)
         DWORD targetPid = GetProcessId(dup);
         CloseHandle(dup);
 
-        // Not in the OS-reported active set -> zombie. No further
-        // liveness check needed.
         if (targetPid != 0 && !PidInSet(targetPid, activePids, activeCount)) {
             char zombieName[MAX_PATH];
             GetProcessNameByPidViaSystemInfo(targetPid, zombieName, sizeof(zombieName));
